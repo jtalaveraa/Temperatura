@@ -13,150 +13,80 @@ import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.ArrayAdapter;
+import com.example.temperatura.grado.Celcius;
+import com.example.temperatura.grado.Farenheit;
+import com.example.temperatura.grado.Kelvin;
 
 public class MainActivity extends AppCompatActivity {
     private EditText inputValor;
     private Spinner spinnerOrigen, spinnerDestino;
     private TextView textResultado;
+    private Button btnConvertir;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         inputValor = findViewById(R.id.input_valor);
         spinnerOrigen = findViewById(R.id.spinner_origen);
         spinnerDestino = findViewById(R.id.spinner_destino);
+        btnConvertir = findViewById(R.id.btn_convertir);
         textResultado = findViewById(R.id.text_resultado);
 
-        Button btnConvertir = findViewById(R.id.btn_convertir);
-        btnConvertir.setOnClickListener(v -> convertirTemperatura());
-
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
+        btnConvertir.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                convertirTemperatura();
+            }
         });
     }
+
     private void convertirTemperatura() {
         double valor = Double.parseDouble(inputValor.getText().toString());
         String origen = spinnerOrigen.getSelectedItem().toString();
         String destino = spinnerDestino.getSelectedItem().toString();
 
-        Temperatura temp;
-        // Instanciando la temperatura según la unidad de origen
-        switch (origen) {
-            case "Celsius":
-                temp = new Celsius(valor);
-                break;
-            case "Kelvin":
-                temp = new Kelvin(valor);
-                break;
-            case "Fahrenheit":
-                temp = new Fahrenheit(valor);
-                break;
-            default:
-                throw new IllegalStateException("Unidad no válida: " + origen);
-        }
-
-        // Realizando la conversión según la unidad de destino
         double resultado = 0;
-        String  unidad = null;
-        switch (destino) {
-            case "Celsius":
-                resultado = temp.parseCelsius();
-                unidad = "Celsius";
-                break;
-            case "Kelvin":
-                resultado = temp.parseKelvin();
-                unidad = "Kelvin";
-                break;
-            case "Fahrenheit":
-                resultado = temp.parseFahrenheit();
-                unidad = "Fahrenheit";
-                break;
+        String unidadDestino = "";
+
+        if (origen.equals("Celsius")) {
+            Celcius celsius = new Celcius(valor);
+            if (destino.equals("Fahrenheit")) {
+                resultado = new Farenheit(valor).parse(celsius).getValor();  // Convertir Celsius a Fahrenheit
+                unidadDestino = "°F";
+            } else if (destino.equals("Kelvin")) {
+                resultado = new Kelvin(valor).parse(celsius).getValor();  // Convertir Celsius a Kelvin
+                unidadDestino = "K";
+            } else {
+                resultado = valor;
+                unidadDestino = "°C";
+            }
+        } else if (origen.equals("Fahrenheit")) {
+            Farenheit fahrenheit = new Farenheit(valor);
+            if (destino.equals("Celsius")) {
+                resultado = new Celcius(valor).parse(fahrenheit).getValor();  // Convertir Fahrenheit a Celsius
+                unidadDestino = "°C";
+            } else if (destino.equals("Kelvin")) {
+                resultado = new Kelvin(valor).parse(fahrenheit).getValor();  // Convertir Fahrenheit a Kelvin
+                unidadDestino = "K";
+            } else {
+                resultado = valor;
+                unidadDestino = "°F";
+            }
+        } else if (origen.equals("Kelvin")) {
+            Kelvin kelvin = new Kelvin(valor);
+            if (destino.equals("Celsius")) {
+                resultado = new Celcius(valor).parse(kelvin).getValor();  // Convertir Kelvin a Celsius
+                unidadDestino = "°C";
+            } else if (destino.equals("Fahrenheit")) {
+                resultado = new Farenheit(valor).parse(kelvin).getValor();  // Convertir Kelvin a Fahrenheit
+                unidadDestino = "°F";
+            } else {
+                resultado = valor;unidadDestino = "°F";
+                unidadDestino = "K";
+            }
         }
-
-        textResultado.setText("Resultado en "  + unidad + ": " + resultado);
-    }
-
-    // Clase Padre: Temperatura
-    static abstract class Temperatura {
-        protected double valor;
-
-        public Temperatura(double valor) {
-            this.valor = valor;
-        }
-
-        public abstract double parseCelsius();
-        public abstract double parseKelvin();
-        public abstract double parseFahrenheit();
-    }
-
-    // Clase Celsius
-    static class Celsius extends Temperatura {
-
-        public Celsius(double valor) {
-            super(valor);
-        }
-
-        @Override
-        public double parseCelsius() {
-            return valor;
-        }
-
-        @Override
-        public double parseKelvin() {
-            return valor + 273.15;
-        }
-
-        @Override
-        public double parseFahrenheit() {
-            return (valor * 9/5) + 32;
-        }
-    }
-
-    // Clase Kelvin
-    static class Kelvin extends Temperatura {
-
-        public Kelvin(double valor) {
-            super(valor);
-        }
-
-        @Override
-        public double parseCelsius() {
-            return valor - 273.15;
-        }
-
-        @Override
-        public double parseKelvin() {
-            return valor;
-        }
-
-        @Override
-        public double parseFahrenheit() {
-            return (valor - 273.15) * 9/5 + 32;
-        }
-    }
-
-    // Clase Fahrenheit
-    static class Fahrenheit extends Temperatura {
-
-        public Fahrenheit(double valor) {
-            super(valor);
-        }
-
-        @Override
-        public double parseCelsius() {
-            return (valor - 32) * 5/9;
-        }
-
-        @Override
-        public double parseKelvin() {
-            return (valor - 32) * 5/9 + 273.15;
-        }
-
-        @Override
-        public double parseFahrenheit() {
-            return valor;
-        }
+        textResultado.setText(String.format("%.2f %s", resultado, unidadDestino));
     }
 }
